@@ -14,6 +14,15 @@ public class Ball {
         this.velocityX = 0.0;
         this.velocityY = 0.0;
     }
+
+    public boolean checkCollision(Paddle paddle) {
+        boolean isVerticallyAligned = (y + radius >= paddle.getY() && 
+                                     y - radius <= paddle.getY() + paddle.getHeight());
+        boolean isHorizontallyAligned = (x + radius >= paddle.getX() && 
+                                       x - radius <= paddle.getX() + paddle.getWidth());
+        
+        return isVerticallyAligned && isHorizontallyAligned;
+    }
     
     public void move() {
         x += velocityX;
