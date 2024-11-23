@@ -4,8 +4,7 @@ public class GameModel {
     private Ball ball;
     private Paddle leftPaddle;
     private Paddle rightPaddle;
-    private int leftScore;
-    private int rightScore;
+    private ScoreBoard scoreBoard;
     private static final double SCREEN_WIDTH = 800;
     private static final double SCREEN_HEIGHT = 600;
 
@@ -17,16 +16,22 @@ public class GameModel {
         leftPaddle = new Paddle(50, SCREEN_HEIGHT/2 - 50, 20, 100);
         rightPaddle = new Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT/2 - 50, 20, 100);
         
-        // Initialize scores
-        leftScore = 0;
-        rightScore = 0;
+        // Initialize scoreboard
+        scoreBoard = new MockScoreBoard(); // Por ahora usamos el mock, luego podríamos inyectarlo
+    }
+
+    public GameModel(ScoreBoard scoreBoard) {
+        this();
+        this.scoreBoard = scoreBoard;
     }
 
     public void update() {
-        movePaddles();
-        moveBall();
-        checkCollisions();
-        checkScore();
+        if (!scoreBoard.isGameOver()) {
+            movePaddles();
+            moveBall();
+            checkCollisions();
+            checkScore();
+        }
     }
 
     private void movePaddles() {
@@ -69,12 +74,12 @@ public class GameModel {
     private void checkScore() {
         // Ball passed left paddle
         if (ball.getX() - ball.getRadius() <= 0) {
-            rightScore++;
+            scoreBoard.updateScore(scoreBoard.getLeftScore(), scoreBoard.getRightScore() + 1);
             resetBall();
         }
         // Ball passed right paddle
         else if (ball.getX() + ball.getRadius() >= SCREEN_WIDTH) {
-            leftScore++;
+            scoreBoard.updateScore(scoreBoard.getLeftScore() + 1, scoreBoard.getRightScore());
             resetBall();
         }
     }
@@ -85,10 +90,17 @@ public class GameModel {
         ball.setVelocityY(5);
     }
 
+    public void resetGame() {
+        scoreBoard.reset();
+        resetBall();
+    }
+
     // Getters
     public Ball getBall() { return ball; }
     public Paddle getLeftPaddle() { return leftPaddle; }
     public Paddle getRightPaddle() { return rightPaddle; }
-    public int getLeftScore() { return leftScore; }
-    public int getRightScore() { return rightScore; }
+    public int getLeftScore() { return scoreBoard.getLeftScore(); }
+    public int getRightScore() { return scoreBoard.getRightScore(); }
+    public boolean isGameOver() { return scoreBoard.isGameOver(); }
+    public String getWinner() { return scoreBoard.getWinner(); }
 }
