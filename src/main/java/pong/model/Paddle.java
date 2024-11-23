@@ -1,4 +1,4 @@
-package Pong.model;
+package pong.model;
 
 public class Paddle {
     private double x;
