@@ -1,4 +1,4 @@
-package Pong.model;
+package pong.model;
 
 public class Ball {
     private double x;
