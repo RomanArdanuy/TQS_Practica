@@ -19,22 +19,30 @@ public class GameControllerTest {
     @Mock
     private GameModel mockModel;
     
+    @Mock
+    private Paddle mockLeftPaddle;
+    
+    @Mock
+    private Paddle mockRightPaddle;
+    
     private GameController controller;
     
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        
+        // Configure mock returns
+        when(mockModel.getLeftPaddle()).thenReturn(mockLeftPaddle);
+        when(mockModel.getRightPaddle()).thenReturn(mockRightPaddle);
+        
         controller = new GameController(mockModel, mockView);
     }
     
     @Test
     void testUpdateCallsModelAndView() {
-        // Setup mock model returns
-        when(mockModel.getBall()).thenReturn(new Ball(100, 100, 10));
-        when(mockModel.getLeftPaddle()).thenReturn(new Paddle(50, 100, 20, 100));
-        when(mockModel.getRightPaddle()).thenReturn(new Paddle(730, 100, 20, 100));
-        when(mockModel.getLeftScore()).thenReturn(0);
-        when(mockModel.getRightScore()).thenReturn(0);
+        // Setup mock ball
+        Ball mockBall = new Ball(100, 100, 10);
+        when(mockModel.getBall()).thenReturn(mockBall);
         
         // Call controller update
         controller.update();
@@ -51,10 +59,10 @@ public class GameControllerTest {
     void testPaddleMovement() {
         // Test left paddle movement
         controller.setLeftPaddleVelocity(5.0);
-        verify(mockModel.getLeftPaddle()).setVelocity(5.0);
+        verify(mockLeftPaddle).setVelocity(5.0);
         
         // Test right paddle movement
         controller.setRightPaddleVelocity(-5.0);
-        verify(mockModel.getRightPaddle()).setVelocity(-5.0);
+        verify(mockRightPaddle).setVelocity(-5.0);
     }
 }

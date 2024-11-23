@@ -5,8 +5,9 @@ public class GameModel {
     private Paddle leftPaddle;
     private Paddle rightPaddle;
     private ScoreBoard scoreBoard;
-    private static final double SCREEN_WIDTH = 800;
-    private static final double SCREEN_HEIGHT = 600;
+    private GameLogger logger;
+    public static final double SCREEN_WIDTH = 800;
+    public static final double SCREEN_HEIGHT = 600;
 
     public GameModel() {
         // Initialize ball at center
@@ -16,13 +17,35 @@ public class GameModel {
         leftPaddle = new Paddle(50, SCREEN_HEIGHT/2 - 50, 20, 100);
         rightPaddle = new Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT/2 - 50, 20, 100);
         
-        // Initialize scoreboard
-        scoreBoard = new MockScoreBoard(); // Por ahora usamos el mock, luego podríamos inyectarlo
+        // Initialize scoreBoard with mock (for now)
+        this.scoreBoard = new MockScoreBoard();
+        this.logger = null;  // Logger is optional in default constructor
     }
 
-    public GameModel(ScoreBoard scoreBoard) {
-        this();
+    public GameModel(ScoreBoard scoreBoard, GameLogger logger) {
+        // Initialize ball at center
+        ball = new Ball(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 10);
+        
+        // Initialize paddles
+        leftPaddle = new Paddle(50, SCREEN_HEIGHT/2 - 50, 20, 100);
+        rightPaddle = new Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT/2 - 50, 20, 100);
+        
         this.scoreBoard = scoreBoard;
+        this.logger = logger;
+        if (logger != null) {
+            logger.logGameStart();
+        }
+    }
+    public GameModel(ScoreBoard scoreBoard) {
+        // Initialize ball at center
+        ball = new Ball(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 10);
+        
+        // Initialize paddles
+        leftPaddle = new Paddle(50, SCREEN_HEIGHT/2 - 50, 20, 100);
+        rightPaddle = new Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT/2 - 50, 20, 100);
+        
+        this.scoreBoard = scoreBoard;
+        this.logger = null;  // No logger in this constructor
     }
 
     public void update() {
@@ -60,14 +83,25 @@ public class GameModel {
 
     private void checkCollisions() {
         // Check paddle collisions
-        if (ball.checkCollision(leftPaddle) || ball.checkCollision(rightPaddle)) {
+        if (ball.checkCollision(leftPaddle)) {
             ball.reverseX();
+            if (logger != null) {
+                logger.logCollision("leftPaddle");
+            }
+        } else if (ball.checkCollision(rightPaddle)) {
+            ball.reverseX();
+            if (logger != null) {
+                logger.logCollision("rightPaddle");
+            }
         }
         
         // Check top and bottom wall collisions
         if (ball.getY() - ball.getRadius() <= 0 || 
             ball.getY() + ball.getRadius() >= SCREEN_HEIGHT) {
             ball.reverseY();
+            if (logger != null) {
+                logger.logCollision("wall");
+            }
         }
     }
 
@@ -75,12 +109,24 @@ public class GameModel {
         // Ball passed left paddle
         if (ball.getX() - ball.getRadius() <= 0) {
             scoreBoard.updateScore(scoreBoard.getLeftScore(), scoreBoard.getRightScore() + 1);
+            if (logger != null) {
+                logger.logScore("right", scoreBoard.getRightScore());
+            }
             resetBall();
+            if (scoreBoard.isGameOver() && logger != null) {
+                logger.logGameEnd(scoreBoard.getWinner());
+            }
         }
         // Ball passed right paddle
         else if (ball.getX() + ball.getRadius() >= SCREEN_WIDTH) {
             scoreBoard.updateScore(scoreBoard.getLeftScore() + 1, scoreBoard.getRightScore());
+            if (logger != null) {
+                logger.logScore("left", scoreBoard.getLeftScore());
+            }
             resetBall();
+            if (scoreBoard.isGameOver() && logger != null) {
+                logger.logGameEnd(scoreBoard.getWinner());
+            }
         }
     }
 
