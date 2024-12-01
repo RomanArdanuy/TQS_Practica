@@ -6,6 +6,11 @@ public class GameModel {
     private Paddle rightPaddle;
     private ScoreBoard scoreBoard;
     private GameLogger logger;
+    private GameMode gameMode;
+    private double speedMultiplier = 1.0;
+    private long gameStartTime;
+    private static final int TIME_TRIAL_DURATION = 60; // seconds
+    private static final int POINTS_TO_WIN = 5;
     public static final double SCREEN_WIDTH = 800;
     public static final double SCREEN_HEIGHT = 600;
 
@@ -20,6 +25,7 @@ public class GameModel {
         // Initialize scoreBoard with mock (for now)
         this.scoreBoard = new MockScoreBoard();
         this.logger = null;  // Logger is optional in default constructor
+        this.gameMode = GameMode.CLASSIC;
     }
 
     public GameModel(ScoreBoard scoreBoard, GameLogger logger) {
@@ -32,10 +38,12 @@ public class GameModel {
         
         this.scoreBoard = scoreBoard;
         this.logger = logger;
+        this.gameMode = GameMode.CLASSIC;
         if (logger != null) {
             logger.logGameStart();
         }
     }
+
     public GameModel(ScoreBoard scoreBoard) {
         // Initialize ball at center
         ball = new Ball(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 10);
@@ -46,10 +54,11 @@ public class GameModel {
         
         this.scoreBoard = scoreBoard;
         this.logger = null;  // No logger in this constructor
+        this.gameMode = GameMode.CLASSIC;
     }
 
     public void update() {
-        if (!scoreBoard.isGameOver()) {
+        if (!isGameOver()) {
             movePaddles();
             moveBall();
             checkCollisions();
@@ -85,11 +94,21 @@ public class GameModel {
         // Check paddle collisions
         if (ball.checkCollision(leftPaddle)) {
             ball.reverseX();
+            if (gameMode == GameMode.SPEED_UP) {
+                speedMultiplier *= 1.1;
+                ball.setVelocityX(ball.getVelocityX() * 1.1);
+                ball.setVelocityY(ball.getVelocityY() * 1.1);
+            }
             if (logger != null) {
                 logger.logCollision("leftPaddle");
             }
         } else if (ball.checkCollision(rightPaddle)) {
             ball.reverseX();
+            if (gameMode == GameMode.SPEED_UP) {
+                speedMultiplier *= 1.1;
+                ball.setVelocityX(ball.getVelocityX() * 1.1);
+                ball.setVelocityY(ball.getVelocityY() * 1.1);
+            }
             if (logger != null) {
                 logger.logCollision("rightPaddle");
             }
@@ -113,7 +132,7 @@ public class GameModel {
                 logger.logScore("right", scoreBoard.getRightScore());
             }
             resetBall();
-            if (scoreBoard.isGameOver() && logger != null) {
+            if (isGameOver() && logger != null) {
                 logger.logGameEnd(scoreBoard.getWinner());
             }
         }
@@ -124,7 +143,7 @@ public class GameModel {
                 logger.logScore("left", scoreBoard.getLeftScore());
             }
             resetBall();
-            if (scoreBoard.isGameOver() && logger != null) {
+            if (isGameOver() && logger != null) {
                 logger.logGameEnd(scoreBoard.getWinner());
             }
         }
@@ -132,13 +151,43 @@ public class GameModel {
 
     private void resetBall() {
         ball = new Ball(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 10);
-        ball.setVelocityX(5);
-        ball.setVelocityY(5);
+        ball.setVelocityX(5 * speedMultiplier);
+        ball.setVelocityY(5 * speedMultiplier);
     }
 
     public void resetGame() {
         scoreBoard.reset();
+        speedMultiplier = 1.0;
+        if (gameMode == GameMode.TIME_TRIAL) {
+            gameStartTime = System.currentTimeMillis();
+        }
         resetBall();
+    }
+
+    public void setGameMode(GameMode mode) {
+        this.gameMode = mode;
+        resetGame();
+        if (mode == GameMode.TIME_TRIAL) {
+            gameStartTime = System.currentTimeMillis();
+        }
+    }
+
+    public int getRemainingTime() {
+        if (gameMode != GameMode.TIME_TRIAL) return 0;
+        int elapsed = (int)(System.currentTimeMillis() - gameStartTime) / 1000;
+        return Math.max(0, TIME_TRIAL_DURATION - elapsed);
+    }
+
+    public boolean isGameOver() {
+        switch (gameMode) {
+            case FIRST_TO_FIVE:
+                return scoreBoard.getLeftScore() >= POINTS_TO_WIN || 
+                       scoreBoard.getRightScore() >= POINTS_TO_WIN;
+            case TIME_TRIAL:
+                return (System.currentTimeMillis() - gameStartTime) / 1000 >= TIME_TRIAL_DURATION;
+            default:
+                return scoreBoard.isGameOver();
+        }
     }
 
     // Getters
@@ -147,6 +196,7 @@ public class GameModel {
     public Paddle getRightPaddle() { return rightPaddle; }
     public int getLeftScore() { return scoreBoard.getLeftScore(); }
     public int getRightScore() { return scoreBoard.getRightScore(); }
-    public boolean isGameOver() { return scoreBoard.isGameOver(); }
     public String getWinner() { return scoreBoard.getWinner(); }
+    public GameMode getGameMode() { return gameMode; }
+    public double getSpeedMultiplier() { return speedMultiplier; }
 }
